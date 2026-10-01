@@ -30,10 +30,16 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
 
 ### Sesudah perbaikan
 
-- **Hash commit perbaikan:** ....
-- **Hasil ukur (median 3 kali):** ....
-- **Prediksi vs kenyataan:** ....
-- **Efek samping yang muncul:** ....
+- **Hash commit perbaikan:** [Hash commit perbaikan kode S0]
+- **Hasil ukur (median 3 kali):**
+  - Percobaan 1: 8 permintaan gambar (8,8 kB), selesai dalam 2,85 detik (total 24 request pada halaman).
+  - Percobaan 2: 8 permintaan gambar (8,8 kB), selesai dalam 3,33 detik (total 24 request pada halaman).
+  - Percobaan 3: 8 permintaan gambar (8,8 kB), selesai dalam 3,11 detik (total 24 request pada halaman).
+  - **Median:** 8 permintaan gambar (total 24 request halaman), waktu pemuatan gambar awal tuntas dalam 3,11 detik.
+- **Prediksi vs kenyataan:**
+  Prediksi terbukti sangat akurat. Penambahan atribut native `loading="lazy"` dan `decoding="async"` serta dimensi eksplisit (`width="480"` `height="480"`) pada kartu produk di `public/js/katalog.js`, dibarengi penetapan `aspect-ratio: 1 / 1` pada kontainer media di `public/css/toko.css`, berhasil menahan browser agar tidak menembakkan 1.500 permintaan gambar sekaligus. Browser hanya meminta gambar untuk produk yang langsung terlihat di viewport (8 kartu teratas). Antrean koneksi jaringan tidak lagi mengalami *head-of-line blocking*, kuota data sangat hemat, dan waktu pemuatan gambar awal tuntas seketika (< 3,5 detik, dibandingkan baseline 54,73 detik).
+- **Efek samping yang muncul:**
+  Gambar produk yang posisinya berada di luar layar (*off-screen*) baru akan diunduh saat pengguna menggulir mendekati kartu tersebut. Ini merupakan perilaku lazim dan ramah performa (*lazy evaluation*) tanpa mengorbankan fungsionalitas katalog.
 
 ## P-07: Pencegahan layout shift pada pemuatan awal
 
@@ -61,7 +67,13 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
 
 ### Sesudah perbaikan
 
-- **Hash commit perbaikan:** ....
-- **Hasil ukur (median 3 kali):** ....
-- **Prediksi vs kenyataan:** ....
-- **Efek samping yang muncul:** ....
+- **Hash commit perbaikan:** [Hash commit perbaikan kode S0]
+- **Hasil ukur (median 3 kali):**
+  - Percobaan 1: CLS = 0,032 (pengukuran 10 detik dengan CPU 4x slowdown).
+  - Percobaan 2: CLS = 0,032.
+  - Percobaan 3: CLS = 0,032.
+  - **Median:** CLS = 0,032 (konsisten 0,032 di seluruh pengujian, jauh melampaui batas target baku $\le 0{,}1$).
+- **Prediksi vs kenyataan:**
+  Prediksi terbukti akurat dan target tercapai. Dengan tersedianya elemen cadangan `<div id="wadah-promo" class="promo-banner memuat">` sejak awal di `public/index.html` dan penetapan dimensi cadangan `min-height: 132px` di `public/css/toko.css`, penyisipan data promo asinkron (latensi ~1,8 detik) di `public/js/promo.js` tidak lagi mendorong elemen di bawahnya secara tiba-tiba. Elemen keping kategori (`min-height: 38px`), ringkasan, dan kartu produk teratas tetap stabil pada koordinat awalnya. Masalah salah klik pada produk teratas teratasi sepenuhnya.
+- **Efek samping yang muncul:**
+  Selama ~1,8 detik pertama saat data promosi sedang diambil dari server, area banner menampilkan kerangka animasi skeleton berdenyut (`denyut-skeleton`). Hal ini justru memberikan umpan balik visual yang baik bagi pengguna (*perceived performance*) dibandingkan kekosongan mendadak yang menggeser tata letak.

@@ -54,7 +54,7 @@ button { cursor: pointer; }
 /* ---------- area utama ---------- */
 .utama { max-width: 1320px; margin: 0 auto; padding: 16px; }
 .alat { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-.keping-kategori { display: flex; gap: 6px; flex-wrap: wrap; }
+.keping-kategori { display: flex; gap: 6px; flex-wrap: wrap; min-height: 38px; }
 .keping { border: 1.5px solid var(--garis); background: var(--putih); padding: 6px 12px; border-radius: 99px; font-weight: 600; font-size: 14px; }
 .keping[aria-pressed="true"] { background: var(--nila); border-color: var(--nila); color: var(--putih); }
 .alat-kanan { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -71,6 +71,8 @@ button { cursor: pointer; }
 .ringkasan { margin: 0 0 12px; color: var(--abu); }
 
 .promo-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: var(--nila); color: var(--putih); border-radius: 12px; padding: 22px 20px; margin-bottom: 16px; min-height: 132px; }
+.promo-banner.memuat { background: linear-gradient(90deg, rgba(26, 20, 100, .1) 25%, rgba(26, 20, 100, .18) 50%, rgba(26, 20, 100, .1) 75%); background-size: 200% 100%; border: 1px dashed var(--garis); animation: denyut-skeleton 1.5s infinite; }
+@keyframes denyut-skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .promo-banner h2 { margin: 0 0 4px; font: italic 900 22px/1.1 var(--huruf-tegas); }
 .promo-banner p { margin: 0; max-width: 60ch; }
 .promo-banner button { border: 0; border-radius: 8px; padding: 12px 18px; background: var(--kilat); color: var(--tinta); font-weight: 800; }
@@ -79,8 +81,8 @@ button { cursor: pointer; }
 .kisi { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; }
 .kartu { position: relative; display: flex; flex-direction: column; background: var(--putih); border: 1px solid var(--garis); border-radius: 10px; overflow: hidden; opacity: 0; margin-top: 16px; transition: opacity .35s ease, margin-top .35s ease; }
 .kartu.terlihat { opacity: 1; margin-top: 0; }
-.kartu-media { display: block; background: var(--kabut); }
-.kartu-media img { display: block; width: 100%; height: auto; }
+.kartu-media { display: block; background: var(--kabut); aspect-ratio: 1 / 1; overflow: hidden; }
+.kartu-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .kartu-badan { display: flex; flex-direction: column; gap: 6px; padding: 10px; flex: 1; }
 .kartu-judul { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.35; overflow: hidden; }
 .harga { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }

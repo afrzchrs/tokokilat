@@ -27,6 +27,10 @@ function buatKartu(produk) {
   const gambar = document.createElement('img');
   gambar.src = produk.gambar;
   gambar.alt = produk.nama;
+  gambar.loading = 'lazy';
+  gambar.decoding = 'async';
+  gambar.width = 480;
+  gambar.height = 480;
   media.append(gambar);
 
   const badan = el('div', 'kartu-badan');

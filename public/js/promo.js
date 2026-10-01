@@ -46,7 +46,6 @@ async function pasangBannerPromo() {
   const respons = await fetch('/api/promo');
   const promo = await respons.json();
 
-  const banner = el('section', 'promo-banner');
   const teks = el('div');
   teks.append(el('h2', '', promo.judul), el('p', '', promo.isi));
   const tombol = el('button', '', promo.tombol);
@@ -55,9 +54,16 @@ async function pasangBannerPromo() {
     tampilkanToast('Syarat promo: berlaku 12 Desember, satu voucher per akun, tidak bisa digabung.');
     if (window.Lacak) window.Lacak.kirim('promo_click', { judul: promo.judul });
   });
-  banner.append(teks, tombol);
 
-  $('#utama').prepend(banner);
+  const wadah = $('#wadah-promo');
+  if (wadah) {
+    wadah.classList.remove('memuat');
+    wadah.append(teks, tombol);
+  } else {
+    const banner = el('section', 'promo-banner');
+    banner.append(teks, tombol);
+    $('#utama').prepend(banner);
+  }
 }
 
 export function pasangPromo() {
