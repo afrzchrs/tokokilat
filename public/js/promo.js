@@ -43,27 +43,29 @@ function pasangTeksBerjalan() {
 }
 
 async function pasangBannerPromo() {
+  // Sisipkan struktur banner SECARA SINKRON (skeleton) sebelum data tiba,
+  // lalu isi teksnya di tempat. Karena node & tata letaknya sudah ada lebih
+  // dulu, tidak ada konten yang bergeser ketika data promo tiba (CLS ~0).
+  const banner = el('section', 'promo-banner');
+  const teks = el('div');
+  const judul = el('h2', '', 'Memuat promo…');
+  const isi = el('p', '', 'Mohon tunggu, sedang mengambil syarat dan ketentuan promo.');
+  teks.append(judul, isi);
+  const tombol = el('button', '', 'Lihat syarat promo');
+  tombol.type = 'button';
+  banner.append(teks, tombol);
+  $('#utama').prepend(banner);
+
   const respons = await fetch('/api/promo');
   const promo = await respons.json();
 
-  const teks = el('div');
-  teks.append(el('h2', '', promo.judul), el('p', '', promo.isi));
-  const tombol = el('button', '', promo.tombol);
-  tombol.type = 'button';
+  judul.textContent = promo.judul;
+  isi.textContent = promo.isi;
+  tombol.textContent = promo.tombol;
   tombol.addEventListener('click', () => {
     tampilkanToast('Syarat promo: berlaku 12 Desember, satu voucher per akun, tidak bisa digabung.');
     if (window.Lacak) window.Lacak.kirim('promo_click', { judul: promo.judul });
   });
-
-  const wadah = $('#wadah-promo');
-  if (wadah) {
-    wadah.classList.remove('memuat');
-    wadah.append(teks, tombol);
-  } else {
-    const banner = el('section', 'promo-banner');
-    banner.append(teks, tombol);
-    $('#utama').prepend(banner);
-  }
 }
 
 export function pasangPromo() {

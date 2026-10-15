@@ -4,6 +4,47 @@
 import { $ } from './util.js';
 
 const sudahTercatat = new Set();
+let pengamatKartu = null;
+
+// Satu IntersectionObserver untuk semua kartu: memunculkan kartu (animasi)
+// dan mencatat impresi saat kartu masuk layar. Ini menggantikan pemindaian
+// querySelectorAll('.kartu') + getBoundingClientRect() pada tiap event gulir/render,
+// yang memaksa layout sinkron (reflow) berulang saat pemuatan awal dan gulir.
+function pengamatKartuSekali() {
+  if (pengamatKartu) return pengamatKartu;
+  pengamatKartu = new IntersectionObserver((entri) => {
+    const impresiBaru = [];
+    for (const e of entri) {
+      if (!e.isIntersecting) continue;
+      const kartu = e.target;
+      if (!kartu.classList.contains('terlihat')) kartu.classList.add('terlihat');
+      const id = kartu.dataset.id;
+      if (id && !sudahTercatat.has(id)) {
+        sudahTercatat.add(id);
+        impresiBaru.push(id);
+      }
+      pengamatKartu.unobserve(kartu);
+    }
+    if (impresiBaru.length && window.Lacak) window.Lacak.kirim('impression', { produk: impresiBaru });
+  }, { rootMargin: '80px 0px 80px 0px' });
+  return pengamatKartu;
+}
+
+// Dipanggil katalog setiap kartu baru dibuat
+export function amatiKartu(kartu) {
+  pengamatKartuSekali().observe(kartu);
+}
+
+// Dipanggil katalog sebelum kisi digambar ulang
+export function lupakanKartu() {
+  if (pengamatKartu) { pengamatKartu.disconnect(); pengamatKartu = null; }
+}
+
+let tinggiDokumen = 0;
+export function perbaruiTinggiDokumen() {
+  tinggiDokumen = document.documentElement.scrollHeight - window.innerHeight;
+}
+window.addEventListener('resize', perbaruiTinggiDokumen, { passive: true });
 
 export function periksaGulir() {
   const kepala = $('#kepala');
@@ -14,26 +55,8 @@ export function periksaGulir() {
   kepala.classList.toggle('melayang', y > 8);
   keAtas.hidden = y < 900;
 
-  const tinggiDokumen = document.documentElement.scrollHeight - window.innerHeight;
-  bar.style.width = (tinggiDokumen > 0 ? (y / tinggiDokumen) * 100 : 0) + '%';
-
-  // Kartu yang masuk layar dimunculkan dengan animasi, dan dicatat sebagai impresi.
-  const tinggiLayar = window.innerHeight;
-  const impresiBaru = [];
-  document.querySelectorAll('.kartu').forEach((kartu) => {
-    const kotak = kartu.getBoundingClientRect();
-    const masukLayar = kotak.top < tinggiLayar + 80 && kotak.bottom > -80;
-    if (masukLayar && !kartu.classList.contains('terlihat')) {
-      kartu.classList.add('terlihat');
-      kartu.style.minHeight = Math.round(kotak.height) + 'px'; // cegah kartu "mengempis" saat animasi
-    }
-    if (masukLayar && !sudahTercatat.has(kartu.dataset.id)) {
-      sudahTercatat.add(kartu.dataset.id);
-      impresiBaru.push(kartu.dataset.id);
-    }
-  });
-
-  if (impresiBaru.length && window.Lacak) window.Lacak.kirim('impression', { produk: impresiBaru });
+  const rasio = tinggiDokumen > 0 ? y / tinggiDokumen : 0;
+  bar.style.width = (rasio * 100) + '%';
 }
 
 export function pasangGulir() {

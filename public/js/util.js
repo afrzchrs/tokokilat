@@ -9,13 +9,15 @@ export function el(tag, kelas, teks) {
   return node;
 }
 
+// Dibuat sekali di scope modul untuk menghindari instansiasi berulang saat menggambar kartu.
+const PEMFORMAT_RUPIAH = new Intl.NumberFormat('id-ID', {
+  style: 'currency',
+  currency: 'IDR',
+  maximumFractionDigits: 0,
+});
+
 export function formatRupiah(angka) {
-  const pemformat = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  });
-  return pemformat.format(angka);
+  return PEMFORMAT_RUPIAH.format(angka);
 }
 
 export function formatRibuan(angka) {
