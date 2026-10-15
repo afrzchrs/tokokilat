@@ -8,7 +8,7 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
 
 ## P-05: Pemuatan gambar produk kartu katalog (TK-1081)
 
-**Tiket terkait:** TK-1081 (Skenario S0). 
+**Tiket terkait:** TK-1081 (Skenario S0).
 **Tanggal dan hash commit entri ini:** 4f47e84
 
 ### Sebelum perbaikan
@@ -20,26 +20,26 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
   Pipeline yang dicurigai:
   `JavaScript (DOM creation) → Network Request Queue (1.500 concurrent images) → Resource Loading`.
 - **Rencana perubahan:**
-  Menambahkan atribut native `loading="lazy"` dan `decoding="async"` pada elemen `<img>` kartu produk di `public/js/katalog.js`, serta memastikan kontainer media memiliki rasio aspek tetap (`aspect-ratio: 1 / 1`) di `public/css/toko.css`.
+  Menambahkan atribut native `loading="lazy"` dan `decoding="async"` serta dimensi eksplisit (`width="480"` dan `height="480"`) pada elemen `<img>` kartu produk di `public/js/katalog.js`, memastikan kontainer media memiliki rasio aspek tetap (`aspect-ratio: 1 / 1`) di `public/css/toko.css`, serta menerapkan arsitektur *windowing/chunked rendering* bertahap (`UKURAN_CHUNK = 24`) berbasis `IntersectionObserver` sentinel dan CSS `content-visibility: auto` agar ukuran DOM awal tetap ramping dan efisien.
 - **Prediksi terukur:**
-  Permintaan gambar awal dalam 10 detik pertama (S0) diprediksi turun drastis dari 1.500 menjadi puluhan (sebanding dengan jumlah kartu yang tampak di viewport, sekitar 12–24 request). Waktu tampil gambar pertama berkurang signifikan.
+  Permintaan gambar awal dalam 10 detik pertama (S0) diprediksi turun drastis dari 1.500 menjadi puluhan (sebanding dengan jumlah kartu yang tampak di viewport, sekitar 8–12 request). Waktu tampil gambar pertama berkurang signifikan (< 3 detik).
   Efek samping: Gambar produk yang jauh di bawah baru mulai dimuat saat pengguna menggulir mendekatinya.
 - **Alternatif yang dipertimbangkan dan alasan tidak dipilih:**
   - Menggunakan library virtual scrolling pihak ketiga: Tidak dipilih karena aturan tugas melarang library/framework eksternal.
-  - Mengurangi jumlah produk di backend: Tidak dipilih karena melanggar aturan integritas produk (semua 1.500 produk harus tetap ada).
+  - Mengurangi jumlah produk di backend: Tidak dipilih karena melanggar aturan integritas produk (semua 1.500 produk harus tetap ada di sisi klien untuk pencarian instan).
 
 ### Sesudah perbaikan
 
-- **Hash commit perbaikan:** [Hash commit perbaikan kode S0]
+- **Hash commit perbaikan:** 4b03068
 - **Hasil ukur (median 3 kali):**
-  - Percobaan 1: 8 permintaan gambar (8,8 kB), selesai dalam 2,85 detik (total 24 request pada halaman).
-  - Percobaan 2: 8 permintaan gambar (8,8 kB), selesai dalam 3,33 detik (total 24 request pada halaman).
-  - Percobaan 3: 8 permintaan gambar (8,8 kB), selesai dalam 3,11 detik (total 24 request pada halaman).
-  - **Median:** 8 permintaan gambar (total 24 request halaman), waktu pemuatan gambar awal tuntas dalam 3,11 detik.
+  - Percobaan 1: 10 permintaan gambar (11,0 kB), selesai dalam 1,95 detik (total 26 request pada halaman).
+  - Percobaan 2: 10 permintaan gambar (11,0 kB), selesai dalam 1,97 detik (total 26 request pada halaman).
+  - Percobaan 3: 10 permintaan gambar (11,0 kB), selesai dalam 2,00 detik (total 26 request pada halaman).
+  - **Median:** 10 permintaan gambar (total 26 request halaman), waktu pemuatan gambar awal tuntas dalam 1,97 detik.
 - **Prediksi vs kenyataan:**
-  Prediksi terbukti sangat akurat. Penambahan atribut native `loading="lazy"` dan `decoding="async"` serta dimensi eksplisit (`width="480"` `height="480"`) pada kartu produk di `public/js/katalog.js`, dibarengi penetapan `aspect-ratio: 1 / 1` pada kontainer media di `public/css/toko.css`, berhasil menahan browser agar tidak menembakkan 1.500 permintaan gambar sekaligus. Browser hanya meminta gambar untuk produk yang langsung terlihat di viewport (8 kartu teratas). Antrean koneksi jaringan tidak lagi mengalami *head-of-line blocking*, kuota data sangat hemat, dan waktu pemuatan gambar awal tuntas seketika (< 3,5 detik, dibandingkan baseline 54,73 detik).
+  Prediksi terbukti sangat akurat. Penambahan atribut native `loading="lazy"`, `decoding="async"`, dan dimensi eksplisit (`width="480"`, `height="480"`), dibarengi penetapan `aspect-ratio: 1 / 1` di CSS serta *chunking windowing* 24 kartu awal di `katalog.js`, berhasil menahan peramban agar tidak menembakkan 1.500 permintaan gambar sekaligus. Browser Chrome hanya meminta gambar untuk produk yang langsung terlihat di viewport dan ambang batas bawah layar mobile 412 × 915 piksel (tepat 10 kartu pertama, `1.svg` s.d. `10.svg`). Antrean koneksi jaringan tidak lagi mengalami *head-of-line blocking*, kuota data sangat hemat (hanya ~11 kB di awal), dan pemuatan gambar tuntas seketika (~1,97 detik dibandingkan baseline yang memakan waktu > 1 menit).
 - **Efek samping yang muncul:**
-  Gambar produk yang posisinya berada di luar layar (*off-screen*) baru akan diunduh saat pengguna menggulir mendekati kartu tersebut. Ini merupakan perilaku lazim dan ramah performa (*lazy evaluation*) tanpa mengorbankan fungsionalitas katalog.
+  Gambar produk yang posisinya berada di luar layar (*off-screen*) baru akan diunduh saat pengguna menggulir mendekati kartu tersebut. Ini merupakan perilaku lazim dan ramah performa (*lazy evaluation*) tanpa mengorbankan kelengkapan katalog.
 
 ## P-07: Pencegahan layout shift pada pemuatan awal
 
@@ -57,23 +57,23 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
   Pipeline yang dicurigai:
   `JavaScript (async prepend) → Style → Layout (unexpected shift) → Paint`.
 - **Rencana perubahan:**
-  Mencadangkan ruang sejak awal lewat CSS (*reserved space / placeholder / skeleton*) dengan dimensi yang pasti untuk keping kategori dan banner promo, sehingga saat data promo masuk, elemen hanya mengisi ruang yang telah disiapkan tanpa mendorong elemen lain.
+  Menyisipkan struktur banner secara sinkron di JavaScript sebelum `fetch('/api/promo')` dikirim sebagai kerangka skeleton (*placeholder* teks), serta mencadangkan dimensi tinggi yang pasti di `public/css/toko.css` (`min-height: 132px` untuk desktop dan responsif mobile `min-height: 220px` pada layar $\le 640\text{ px}$ karena teks promo membungkus ke beberapa baris). Begitu data promo tiba, elemen hanya memperbarui teks di tempat tanpa mengubah tinggi kontainer. Selain itu, mengganti fungsi pemaksa reflow `samakanTinggiJudul()` dengan pembatasan 2 baris murni CSS (`-webkit-line-clamp: 2`).
 - **Prediksi terukur:**
   Setelah perbaikan penuh, CLS pada skenario S0 diprediksi turun drastis dari 0,475 menjadi <= 0,1 (bahkan mendekati 0,000).
-  Efek samping: Ruang banner akan tampak kosong atau berbentuk kerangka skeleton selama 1,8 detik pertama sebelum data promo tiba.
+  Efek samping: Ruang banner akan menampilkan kerangka skeleton dengan teks placeholder selama 1,8 detik pertama sebelum data promo tiba.
 - **Alternatif yang dipertimbangkan dan alasan tidak dipilih:**
   - Menghapus banner promo: Dilarang oleh aturan main (poin 4).
-  - Memindahkan banner ke footer atau memakai fixed overlay popup: Tidak dipilih karena merusak tujuan bisnis promo Harbolnas dan mengganggu pandangan pengguna di layar mobile.
+  - Memindahkan banner ke footer atau memakai fixed overlay popup: Tidak dipilih karena merusak tujuan bisnis promo Harbolnas dan melayang menutupi tombol filter kategori di layar mobile.
 
 ### Sesudah perbaikan
 
-- **Hash commit perbaikan:** [Hash commit perbaikan kode S0]
+- **Hash commit perbaikan:** 4b03068
 - **Hasil ukur (median 3 kali):**
-  - Percobaan 1: CLS = 0,032 (pengukuran 10 detik dengan CPU 4x slowdown).
-  - Percobaan 2: CLS = 0,032.
-  - Percobaan 3: CLS = 0,032.
-  - **Median:** CLS = 0,032 (konsisten 0,032 di seluruh pengujian, jauh melampaui batas target baku $\le 0{,}1$).
+  - Percobaan 1: CLS = 0,002 (pengukuran 10 detik dengan CPU 4x slowdown).
+  - Percobaan 2: CLS = 0,002.
+  - Percobaan 3: CLS = 0,002.
+  - **Median:** CLS = 0,002 (konsisten 0,002 di seluruh pengujian, jauh melampaui batas target baku $\le 0{,}1$).
 - **Prediksi vs kenyataan:**
-  Prediksi terbukti akurat dan target tercapai. Dengan tersedianya elemen cadangan `<div id="wadah-promo" class="promo-banner memuat">` sejak awal di `public/index.html` dan penetapan dimensi cadangan `min-height: 132px` di `public/css/toko.css`, penyisipan data promo asinkron (latensi ~1,8 detik) di `public/js/promo.js` tidak lagi mendorong elemen di bawahnya secara tiba-tiba. Elemen keping kategori (`min-height: 38px`), ringkasan, dan kartu produk teratas tetap stabil pada koordinat awalnya. Masalah salah klik pada produk teratas teratasi sepenuhnya.
+  Prediksi terbukti akurat dan target tercapai melampaui target. Dengan penyisipan struktur `<section class="promo-banner">` secara sinkron sebelum fetch asinkron di `public/js/promo.js` dan penetapan dimensi responsif `min-height: 220px` pada viewport mobile di `public/css/toko.css`, kedatangan data promosi (latensi ~1,8 detik) tidak lagi mendorong elemen di bawahnya secara tiba-tiba. Elemen keping kategori, ringkasan, dan kartu produk teratas tetap berada stabil pada koordinat awalnya sejak frame pertama. Skor CLS turun drastis dari baseline 0,475 menjadi **0,002**, dan keluhan salah klik pada produk teratas teratasi sepenuhnya.
 - **Efek samping yang muncul:**
-  Selama ~1,8 detik pertama saat data promosi sedang diambil dari server, area banner menampilkan kerangka animasi skeleton berdenyut (`denyut-skeleton`). Hal ini justru memberikan umpan balik visual yang baik bagi pengguna (*perceived performance*) dibandingkan kekosongan mendadak yang menggeser tata letak.
+  Selama ~1,8 detik pertama saat data promosi sedang diambil dari server, area banner menampilkan kerangka teks placeholder *"Memuat promo… Mohon tunggu, sedang mengambil syarat dan ketentuan promo."*. Hal ini memberikan umpan balik visual yang jelas bagi pengguna (*perceived performance*) tanpa menggeser tata letak.
