@@ -10,7 +10,7 @@ Branch atau commit tempat usulan diterapkan: `audit-ai-eval` (evaluasi pada tike
 
 ---
 
-## A-01: Usulan AI memakai `async` dan `debounce` pada tombol "+ Keranjang"
+## A-03: Usulan AI memakai `async` dan `debounce` pada tombol "+ Keranjang"
 
 - **Tiket yang diminta diperbaiki:** TK-1044 (Skenario S2)
 - **Prompt yang diberikan (ringkas):**
@@ -43,7 +43,7 @@ Branch atau commit tempat usulan diterapkan: `audit-ai-eval` (evaluasi pada tike
 
 ---
 
-## A-02: Usulan AI menggunakan `debounce` untuk mengatasi pesanan ganda pada "Beli sekarang"
+## A-04: Usulan AI menggunakan `debounce` untuk mengatasi pesanan ganda pada "Beli sekarang"
 
 - **Tiket yang diminta diperbaiki:** TK-1052 (Skenario S3)
 - **Prompt yang diberikan (ringkas):**
@@ -86,4 +86,4 @@ Branch atau commit tempat usulan diterapkan: `audit-ai-eval` (evaluasi pada tike
 
 Dalam pengerjaan tugas ini, Namun kami harus sangat berhati-hati terhadap saran teknis perbaikan performa dari AI. AI hanya membaca pola kode teks dari sebuah file tertentu dan sering kali menyarankan solusi template generik, tanpa tahu apa yang sebenarnya terjadi di runtime browser. AI tidak bisa melihat flame chart DevTools, tidak tahu antrean task di event loop, dan tidak merasakan langsung jeda interaksi pada perangkat.
 
-Pelajaran terpenting bagi kami: **jangan langsung percaya saran optimasi AI sebelum dibuktikan dengan trace profiling sendiri**. Pemeriksaan langsung lewat DevTools tetap diperlukan agar perbaikan benar-benar menyelesaikan akar masalah tanpa merusak pengalaman pengguna.
+Pelajaran terpenting bagi kami: **jangan langsung percaya saran optimasi AI sebelum dibuktikan dengan trace profiling sendiri**. Pemeriksaan langsung lewat DevTools tetap diperlukan agar perbaikan benar-benar menyelesaikan akar masalah tanpa merusak pengalaman pengguna
