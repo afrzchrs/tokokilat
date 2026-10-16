@@ -26,17 +26,17 @@ Pengukuran dilakukan dengan mematuhi protokol baku pada TUGAS.md bagian 7:
 
 ## 3. Hasil sebelum dan sesudah
 
-| Skenario | Metrik                                        | Sebelum (median) | Sesudah (median)  | Target                         | Tercapai?          |
-| -------- | --------------------------------------------- | ---------------- | ----------------- | ------------------------------ | ------------------ |
+| Skenario | Metrik                                        | Sebelum (median) | Sesudah (median)  | Target                         | Tercapai?    |
+| -------- | --------------------------------------------- | ---------------- | ----------------- | ------------------------------ | ------------ |
 | S0       | CLS                                           | 0.475            | 0.002             | <= 0,1                         | **Tercapai** |
 | S0       | Jumlah permintaan gambar dalam 10 dtk pertama | 1500             | 10 (total 26 req) | sebanding dengan yang terlihat | **Tercapai** |
-| S1       | INP                                           |                  |                   | <= 200 ms                      |                    |
-| S1       | Long task terlama                             |                  |                   | <= 100 ms                      |                    |
-| S2       | INP                                           |                  |                   | <= 200 ms                      |                    |
-| S3       | Jumlah pesanan dari 3 klik                    |                  |                   | 1                              |                    |
-| S4       | INP / progres tergambar bertahap?             |                  |                   | Tergambar bertahap             |                    |
-| S5       | Frame > 50 ms per 10 dtk                      |                  |                   | <= 2                           |                    |
-| S6       | Frame > 50 ms per 10 dtk                      |                  |                   | <= 2                           |                    |
+| S1       | INP                                           |                  |                   | <= 200 ms                      |              |
+| S1       | Long task terlama                             |                  |                   | <= 100 ms                      |              |
+| S2       | INP                                           |                  |                   | <= 200 ms                      |              |
+| S3       | Jumlah pesanan dari 3 klik                    |                  |                   | 1                              |              |
+| S4       | INP / progres tergambar bertahap?             |                  |                   | Tergambar bertahap             |              |
+| S5       | Frame > 50 ms per 10 dtk                      |                  |                   | <= 2                           |              |
+| S6       | Frame > 50 ms per 10 dtk                      |                  |                   | <= 2                           |              |
 
 ## 4. Temuan
 
@@ -50,16 +50,14 @@ Ulangi blok berikut untuk tiap temuan. Urutkan berdasarkan dampak, bukan urutan 
 - **Bukti:**
   Pada baseline trace S0, tercatat 1.500 event `ResourceSendRequest` dengan `resourceType: "Image"`, dari `/img/p/1.svg` sampai `/img/p/1500.svg` yang diminta sekaligus sejak awal halaman dimuat. Waktu tunggu `Queuing and connecting` gambar mencapai puluhan detik hingga lebih dari 1 menit karena antrean koneksi jaringan jenuh.
   **bukti berkas:** image/LAPORAN/1790854407049.png
-
-
 - **Akar masalah dan mekanismenya:**
   Pada `public/js/katalog.js`, seluruh 1.500 elemen `<img>` langsung diberi atribut `src` saat kartu dibuat oleh `renderProduk()` tanpa atribut `loading="lazy"`. Browser langsung menembakkan 1.500 permintaan HTTP serentak, melampaui batas koneksi paralel per host (maksimal 6 koneksi pada HTTP/1.1). Akibatnya, terjadi antrean jaringan masif (_head-of-line blocking_), di mana gambar yang sedang dilihat pengguna di viewport harus mengantre di belakang ribuan gambar off-screen.
 - **Kualitas yang terdampak (ISO/IEC 25010):**
-
   - `Performance efficiency – time behaviour`: Waktu tunggu pengunduhan gambar selesai memakan waktu > 1 menit.
   - `Performance efficiency – resource utilization`: Boros kuota data dan memori karena mengunduh seluruh 1.500 resource gambar sekaligus.
   - `Performance efficiency – capacity`: Strategi pemuatan tidak mampu berskala dengan baik ketika jumlah produk mencapai ribuan.
   - `Interaction capability – user engagement`: Pengalaman belanja pengguna terganggu akibat tampilan dipenuhi kotak abu-abu dalam waktu lama.
+
 - **Perbaikan:**
   Pada `public/js/katalog.js`, menambahkan atribut native `loading="lazy"` dan `decoding="async"` serta dimensi eksplisit `width="480"` dan `height="480"` pada elemen `<img>`. Pada `public/css/toko.css`, menetapkan `aspect-ratio: 1 / 1;` pada kontainer `.kartu-media` dan `content-visibility: auto;` pada `.kartu`. Selain itu, diterapkan teknik penggambaran bertahap (_windowing/chunked rendering_ dengan `UKURAN_CHUNK = 24`) berbasis elemen batas `<div class="sentinel">` dan `IntersectionObserver`. Dengan kombinasi ini, mesin browser secara otomatis menahan pengunduhan resource gambar di luar layar dan menjaga ukuran DOM awal tetap kecil.
 - **Trade-off:**
@@ -84,15 +82,15 @@ Ulangi blok berikut untuk tiap temuan. Urutkan berdasarkan dampak, bukan urutan 
   Setelah data promo diterima, banner baru dibuat dan disisipkan ke bagian paling atas kontainer menggunakan `$('#utama').prepend(banner);`.
   Karena kontainer `#utama` tidak memesan ruang sebelumnya (_unreserved space / unsized injection_), penyisipan elemen banner setinggi ~132px (atau ~220px di layar mobile) secara mendadak mendorong seluruh elemen di bawahnya ke bawah. Pergeseran mendadak setelah pemuatan awal inilah yang menghasilkan skor CLS masif sebesar 0,475 dan memicu salah klik pada target pengguna.
 - **Kualitas yang terdampak (ISO/IEC 25010):**
-
   - `Performance efficiency – time behaviour`: Pekerjaan reflow/re-layout besar setelah response asinkron tiba.
   - `Interaction capability – user error protection`: Pengguna melakukan kesalahan klik tanpa sengaja (_accidental click_) akibat elemen berpindah posisi saat hendak disentuh.
   - `Interaction capability – operability`: Tata letak halaman tidak stabil sehingga menyulitkan navigasi.
-- **Perbaikan:**
 
+- **Perbaikan:**
   1. Pada `public/js/promo.js`, fungsi `pasangBannerPromo()` menyisipkan elemen skeleton `<section class="promo-banner">` secara sinkron ke dalam `#utama` sebelum permintaan jaringan `fetch('/api/promo')` dikirimkan, lengkap dengan teks placeholder informatif. Begitu respons tiba, teks diperbarui di tempat tanpa mengubah dimensi kontainer.
   2. Pada `public/css/toko.css`, menetapkan `min-height: 132px` untuk desktop dan `@media (max-width: 640px) { .promo-banner { min-height: 220px; } }` untuk layar ponsel (412 × 915 px) agar sesuai dengan tinggi pembungkusan teks multi-baris promo.
   3. Menghapus fungsi pemaksa reflow `samakanTinggiJudul()` di `katalog.js` dan menggantinya dengan pembatasan tinggi 2 baris murni CSS (`-webkit-line-clamp: 2; height: calc(2 * 1.35em)`).
+
 - **Trade-off:**
   Alternatif memindahkan banner ke footer atau memakai popup modal melayang tidak dipilih karena merusak tujuan promosi Harbolnas dan menutupi navigasi filter. Harga dari solusi ini adalah area banner menampilkan teks kerangka skeleton selama 1,8 detik pertama sebelum data promo tiba, namun hal ini memberikan kejelasan bagi pengguna (_perceived performance_) dan menjamin stabilitas layout 100%.
 - **Hasil:**
