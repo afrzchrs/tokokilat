@@ -120,55 +120,6 @@ berikutnya pada `s` (±202 ms pada `sep`).
 
 ---
 
-## P-02: Layout sinkron berulang pada `samakanTinggiJudul` dan `periksaGulir`
-
-**Tiket terkait:** TK-1041
-**Tanggal dan hash commit entri ini:** 2026-10-16, (isi hash setelah commit)
-
-### Sebelum perbaikan
-
-- **Yang teramati di trace (baseline):** 27 Layout dan 28 UpdateLayoutTree dalam *setiap* handler
-  `input`, untuk semua ukuran hasil. Di Percobaan 2 ketikan `s`: Layout total 963 ms, dengan
-  satu layout penuh 451 ms, satu layout 200 ms, dan 24 layout kecil berukuran 7-21 ms. Ketikan
-  `sep` juga 27 Layout, tetapi 23 di antaranya hanya 0-2 ms. `samakanTinggiJudul` adalah
-  fungsi dengan self time terbesar (46-50% dari seluruh handler). Panel Insights menandai "Forced reflow".
-- **Dugaan mekanisme:** angka 27 cocok dengan loop `samakanTinggiJudul`, yang mengulang maksimal
-  `JUMLAH_CONTOH = 24` kali, ditambah ±3 layout dari `periksaGulir`. Pada tiap iterasi kode
-  *menulis* `style.height = 'auto'` (membuat layout kotor) lalu langsung *membaca* `offsetHeight`
-  (memaksa layout sinkron sebelum rendering opportunity). Pada `periksaGulir`, `classList.add` dan
-  `style.minHeight` (tulis) diselang-seling dengan `getBoundingClientRect` (baca) untuk tiap kartu di
-  layar, polanya sama. Ini adalah layout thrashing di tahap Layout, di dalam task JavaScript.
-  **Perhatian:** layout penuh pertama (451 ms pada `s`) *tidak* disebabkan loop. Layout itu akan tetap
-  terjadi sebagai layout normal setelah handler selesai karena DOM baru, jadi membuang loop hanya
-  memindahkannya. Yang benar-benar hilang hanya ±24 layout kecil, ditambah UpdateLayoutTree-nya.
-- **Rencana perubahan:** (a) ganti penyamaan tinggi lewat JavaScript dengan CSS: `line-clamp` 2-3 baris
-  dan `min-height` berbasis `lh`/`em` pada `.kartu-judul`, atau baca semua tinggi dulu baru tulis
-  sekali (batch baca-lalu-tulis). (b) Di `periksaGulir`, kumpulkan semua `getBoundingClientRect` dalam
-  satu fase baca, lalu terapkan semua perubahan kelas dan `minHeight` dalam satu fase tulis.
-  (c) Pindahkan pembacaan `scrollHeight` dan `scrollY` ke callback `requestAnimationFrame`.
-- **Prediksi terukur:** setelah perubahan ini **saja** (tanpa P-01), jumlah Layout per handler turun
-  dari 27 menjadi **≤2**, tetapi durasi handler `s` hanya turun **15-25%** (±400-500 ms dari
-  ±2.080 ms di Percobaan 2; ±0,8-1 detik dari 4.186 ms), karena sisanya adalah pembuatan 2.897 kartu dan
-  satu layout penuh. Pada `sep` (145 kartu) penurunan hanya ±20-40 ms. Dengan kata lain, ini
-  **bukan perbaikan utama** untuk TK-1041, meskipun `samakanTinggiJudul` tampak paling dominan di
-  bottom-up. Self time fungsi itu mencakup layout penuh yang dipicunya. Bila prediksi ini benar,
-  `samakanTinggiJudul` menghilang dari bottom-up sementara kolom Layout total hanya turun sedikit.
-  **Efek samping yang mungkin memburuk:** jika tinggi judul disamakan lewat CSS dan ada judul yang
-  lebih panjang dari batas, teks terpotong (kehilangan informasi); jika tinggi tetap salah hitung,
-  baris tombol tidak sejajar.
-- **Alternatif yang dipertimbangkan dan alasan tidak dipilih:**
-  - *Mengukur lebih sedikit contoh (misalnya 6 bukan 24):* menurunkan jumlah layout tetapi
-    mempertahankan pola baca-tulis yang salah, dan hasil penyamaan jadi kurang akurat.
-  - *Menunda `samakanTinggiJudul` ke `requestAnimationFrame` tanpa mengubah pola:* menunda, tidak
-    menghilangkan thrashing.
-
-### Sesudah perbaikan
-
-- **Hash commit perbaikan:**
-- **Hasil ukur (median 3 kali):**
-- **Prediksi vs kenyataan:**
-- **Efek samping yang muncul:**
-
 ---
 
 ## P-03: SDK analitik dipanggil sinkron pada setiap ketikan
@@ -218,36 +169,6 @@ berikutnya pada `s` (±202 ms pada `sep`).
 
 ---
 
-## P-04: `formatRupiah` membuat `Intl.NumberFormat` baru di setiap panggilan
-
-**Tiket terkait:** TK-1041
-**Tanggal dan hash commit entri ini:** 2026-10-16, (isi hash setelah commit)
-
-### Sebelum perbaikan
-
-- **Yang teramati di trace (baseline):** `formatRupiah` muncul sebagai fungsi dengan self time
-  terbesar keempat di handler `input`: 248 ms (P2), 623 ms (P3), 625 ms (P1), sekitar 7-9%
-  dari seluruh handler.
-- **Dugaan mekanisme:** `new Intl.NumberFormat('id-ID', ...)` dibuat ulang untuk tiap harga
-  (sampai 3 kali per kartu: harga kini, harga asli, harga voucher). Konstruktor `Intl` mahal karena
-  memuat data locale. Ini murni pekerjaan JavaScript di dalam task interaksi, dan biayanya
-  bertambah linear dengan jumlah kartu.
-- **Rencana perubahan:** buat satu instance `Intl.NumberFormat` di level modul dan pakai ulang.
-- **Prediksi terukur:** self time `formatRupiah` turun ±90% (dari 250-620 ms menjadi sekitar
-  25-60 ms untuk keseluruhan S1), sehingga handler `s` turun ±6-8% bila berdiri sendiri. Setelah
-  P-01 diterapkan, kontribusinya menyusut ke ±1-3 ms per ketikan karena hanya ±50 kartu yang
-  dibuat. Tidak ada efek samping fungsional yang diperkirakan. Format `Rp` dan spasi tidak boleh
-  berubah, perlu dicek ulang.
-- **Alternatif yang dipertimbangkan dan alasan tidak dipilih:**
-  - *`toLocaleString` per panggilan:* sama mahal.
-  - *Cache hasil per angka:* menambah memori dan lebih rumit tanpa keuntungan berarti.
-
-### Sesudah perbaikan
-
-- **Hash commit perbaikan:**
-- **Hasil ukur (median 3 kali):**
-- **Prediksi vs kenyataan:**
-- **Efek samping yang muncul:**
 
 ---
 
