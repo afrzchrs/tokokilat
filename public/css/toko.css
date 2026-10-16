@@ -35,7 +35,7 @@ button { cursor: pointer; }
 .tombol-kepala { background: transparent; border: 1.5px solid rgba(255, 255, 255, .45); color: var(--putih); padding: 8px 12px; border-radius: 8px; }
 .tombol-kepala:hover { border-color: var(--kilat); }
 .tombol-kepala b { display: inline-block; min-width: 22px; margin-left: 4px; padding: 0 6px; border-radius: 99px; background: var(--kilat); color: var(--tinta); text-align: center; }
-.bar-gulir { height: 3px; width: 0; background: var(--kilat); }
+.bar-gulir { height: 3px; width: 100%; transform: scaleX(0); transform-origin: left center; background: var(--kilat); }
 
 /* ---------- strip flash sale ---------- */
 .kilat { background: var(--kilat); color: var(--tinta); overflow: hidden; }
@@ -47,9 +47,14 @@ button { cursor: pointer; }
 .angka span { font: italic 900 clamp(34px, 6vw, 64px)/1 var(--huruf-tegas); letter-spacing: -.04em; }
 .angka.kecil span { font-size: clamp(20px, 3vw, 30px); color: var(--nila-2); padding-top: .55em; }
 .angka small { font-size: 12px; font-weight: 600; }
-.hm-garis { position: absolute; left: 0; bottom: 0; height: 5px; background: var(--tinta); }
+.hm-garis { position: absolute; left: 0; bottom: 0; height: 5px; width: 100%; background: var(--tinta); transform-origin: left center; will-change: transform; }
 .berjalan { position: relative; height: 34px; background: var(--nila-2); color: var(--putih); overflow: hidden; }
-.berjalan-teks { position: absolute; top: 7px; left: 100%; white-space: nowrap; font-size: 14px; font-weight: 600; }
+.berjalan-jalur { position: absolute; top: 7px; left: 0; display: flex; white-space: nowrap; will-change: transform; }
+.berjalan-aktif { animation: jalan 30s linear infinite; }
+.berjalan-teks { white-space: nowrap; font-size: 14px; font-weight: 600; padding-right: 4rem; }
+/* Teks berjalan digerakkan di compositor (transform), bukan lewat setInterval
+   yang menulis style.left tiap 10 ms -> main thread tetap santai saat diam. */
+@keyframes jalan { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 /* ---------- area utama ---------- */
 .utama { max-width: 1320px; margin: 0 auto; padding: 16px; }
@@ -77,12 +82,13 @@ button { cursor: pointer; }
 
 /* ---------- kisi produk ---------- */
 .kisi { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; }
-.kartu { position: relative; display: flex; flex-direction: column; background: var(--putih); border: 1px solid var(--garis); border-radius: 10px; overflow: hidden; opacity: 0; margin-top: 16px; transition: opacity .35s ease, margin-top .35s ease; }
-.kartu.terlihat { opacity: 1; margin-top: 0; }
+.kartu { position: relative; display: flex; flex-direction: column; background: var(--putih); border: 1px solid var(--garis); border-radius: 10px; overflow: hidden; opacity: 0; transform: translateY(16px); transition: opacity .35s ease, transform .35s ease; content-visibility: auto; contain-intrinsic-size: auto 340px; }
+.kartu.terlihat { opacity: 1; transform: none; }
+.sentinel { grid-column: 1 / -1; height: 1px; }
 .kartu-media { display: block; background: var(--kabut); }
 .kartu-media img { display: block; width: 100%; height: auto; }
 .kartu-badan { display: flex; flex-direction: column; gap: 6px; padding: 10px; flex: 1; }
-.kartu-judul { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.35; overflow: hidden; }
+.kartu-judul { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.35; height: calc(2 * 1.35em); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .harga { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
 .harga-kini { font-size: 17px; font-weight: 800; color: var(--merah); }
 .harga-asli { font-size: 12px; color: var(--abu); text-decoration: line-through; }
@@ -96,9 +102,11 @@ button { cursor: pointer; }
 .tombol-tambah.sudah { background: var(--hijau); border-color: var(--hijau); color: var(--putih); }
 
 .lencana-kilat { position: absolute; top: 8px; left: 8px; z-index: 1; background: var(--kilat); color: var(--tinta); font-size: 11px; font-weight: 900; padding: 3px 8px; border-radius: 4px; animation: denyut .9s ease-in-out infinite; }
+/* Animasi memakai transform + opacity (properti compositor), bukan top +
+   box-shadow yang memaksa layout & paint tiap frame. */
 @keyframes denyut {
-  0%, 100% { top: 8px; box-shadow: 0 0 0 0 rgba(255, 212, 0, .95); }
-  50% { top: 4px; box-shadow: 0 0 0 9px rgba(255, 212, 0, 0); }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.12); opacity: .85; }
 }
 
 .kosong { grid-column: 1 / -1; background: var(--putih); border: 1.5px dashed var(--garis); border-radius: 10px; padding: 28px; text-align: center; }
@@ -132,6 +140,10 @@ button { cursor: pointer; }
   .kisi { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .utama { padding: 10px; }
   .voucher input { width: 110px; }
+  /* Ruang banner direservasi lebih tinggi di layar sempit (isi membungkus ke
+     beberapa baris). Placeholder pemuatan memakai kelas yang sama, sehingga
+     tinggi akhirnya sama dengan tinggi yang sudah dipesan -> CLS ~0. */
+  .promo-banner { min-height: 220px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
