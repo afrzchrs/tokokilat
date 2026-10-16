@@ -1,6 +1,6 @@
 // Pencarian, saringan kategori, dan pengurutan.
 
-import { $, el, hargaSetelahDiskon } from './util.js';
+import { $, el, debounce, hargaSetelahDiskon, kirimTertunda } from './util.js';
 import { keadaan, renderProduk } from './katalog.js';
 
 const saringan = { kata: '', kategori: 'Semua', urut: 'relevan' };
@@ -15,9 +15,35 @@ function normalkan(teks) {
     .trim();
 }
 
+// Teks pencarian tiap produk dinormalkan sekali lalu di-cache, supaya
+// normalkan() (regex atas string panjang) tidak dijalankan ulang untuk
+// seluruh katalog pada setiap ketikan.
+const teksTernormal = new WeakMap();
+
+function teksProduk(produk) {
+  let teks = teksTernormal.get(produk);
+  if (teks === undefined) {
+    teks = normalkan(produk.nama + ' ' + produk.merek + ' ' + produk.kategori + ' ' + produk.kota);
+    teksTernormal.set(produk, teks);
+  }
+  return teks;
+}
+
 function cocok(produk, kunci) {
-  const teks = normalkan(produk.nama + ' ' + produk.merek + ' ' + produk.kategori + ' ' + produk.kota);
-  return kunci.split(' ').every((k) => teks.includes(k));
+  return kunci.split(' ').every((k) => teksProduk(produk).includes(k));
+}
+
+// Bangun indeks teks untuk seluruh katalog secara bertahap (per-chunk lewat
+// macrotask). Kalau tidak, pencarian pertama menanggung normalisasi 3000 produk
+// sekaligus (~40 ms, jadi ~160 ms pada CPU 4x) sehingga menjadi long task.
+export function siapkanIndeks(produk) {
+  let i = 0;
+  const langkah = () => {
+    const batas = Math.min(i + 300, produk.length);
+    for (; i < batas; i++) teksProduk(produk[i]);
+    if (i < produk.length) setTimeout(langkah, 0);
+  };
+  langkah();
 }
 
 const PEMBANDING = {
@@ -37,14 +63,18 @@ export function terapkanSaringan() {
   if (PEMBANDING[saringan.urut]) hasil = hasil.slice().sort(PEMBANDING[saringan.urut]);
   renderProduk(hasil);
 
-  if (window.Lacak && kunci) window.Lacak.kirim('search', { kata: saringan.kata, jumlah: hasil.length });
+  if (kunci) kirimTertunda('search', { kata: saringan.kata, jumlah: hasil.length });
 }
 
 export function pasangPencarian() {
   const kolom = $('#kolom-cari');
+  // Debounce: tiap huruf tidak lagi memicu render ulang seluruh kisi; render
+  // dijalankan setelah ketikan berhenti sejenak, sehingga tiap task pendek dan
+  // browser tetap punya rendering opportunity -> INP turun.
+  const terapkanTertunda = debounce(() => terapkanSaringan(), 150);
   kolom.addEventListener('input', () => {
     saringan.kata = kolom.value;
-    terapkanSaringan();
+    terapkanTertunda();
   });
 
   $('#pilih-urut').addEventListener('change', (e) => {
