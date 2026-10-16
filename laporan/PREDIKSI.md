@@ -44,7 +44,7 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
 ## P-07: Pencegahan layout shift pada pemuatan awal
 
 **Tiket terkait:** TK-1078 (Skenario S0)
-**Tanggal dan hash commit entri ini:**2026-10-01(1a5490b)
+**Tanggal dan hash commit entri ini:** 2026-10-01(1a5490b)
 
 ### Sebelum perbaikan
 
