@@ -30,7 +30,7 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
 
 ### Sesudah perbaikan
 
-- **Hash commit perbaikan:**4b03068
+- **Hash commit perbaikan:** 4b03068
 - **Hasil ukur (median 3 kali):**
   - Percobaan 1: 10 permintaan gambar (11,0 kB), selesai dalam 1,95 detik (total 26 request pada halaman).
   - Percobaan 2: 10 permintaan gambar (11,0 kB), selesai dalam 1,97 detik (total 26 request pada halaman).
