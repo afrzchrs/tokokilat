@@ -26,11 +26,12 @@ Efek samping yang mungkin terjadi adalah waktu penyelesaian perhitungan keseluru
 
 ### Sesudah perbaikan
 
-- **Hash commit perbaikan:** 
-- **Hasil ukur (median 3 kali):** ....
-- **Prediksi vs kenyataan:** tepat, meleset, atau sebagian? Bila meleset, apa yang salah dari model mental Anda?
-- **Efek samping yang muncul:** ....
-
+- **Hash commit perbaikan:** 16 Oktober 2026
+- **Hasil ukur (median 3 kali):** INP: 56 ms, dari 312 ms. Blocking: 11 ms, dari 26.956 ms.
+Jumlah Long Task: 1 kejadian, dari 385 kejadian. Long Task terlama: 58 ms, dari 539 ms. Frame di atas 50 ms: 9 kejadian, dari 802 kejadian. Frame terburuk: 97 ms, dari 3.133 ms.
+- **Prediksi vs kenyataan:** Prediksi tercapai untuk INP karena median hasil sesudah perbaikan sebesar 56 ms, di bawah target 200 ms. Blocking dan jumlah Long Task juga turun secara signifikan. Hasil ini mendukung dugaan bahwa perubahan mengurangi beban yang menghambat interaksi.
+Meskipun demikian, frame terburuk pada salah satu pengujian sesudah perbaikan masih mencapai 1.630 ms. Dengan demikian, respons interaksi membaik, tetapi belum dapat disimpulkan bahwa seluruh masalah rendering telah hilang.
+- **Efek samping yang muncul:** Berdasarkan metrik yang tersedia, jumlah frame di atas 50 ms masih tercatat 5–10 kejadian pada pengujian sesudah perbaikan. Hal ini menunjukkan masih terdapat aktivitas yang dapat menghasilkan frame lambat. Efek samping fungsional lain belum dapat dipastikan hanya dari screenshot dan perlu diperiksa melalui pengujian fungsional.
 
 ## P-02: Aktivitas Pemrosesan dan Rendering Berlebih saat Halaman Idle (S6)
 
@@ -51,7 +52,10 @@ Efek samping yang mungkin terjadi adalah pembaruan hitung mundur atau ticker ter
 
 ### Sesudah perbaikan
 
-- **Hash commit perbaikan:** ....
-- **Hasil ukur (median 3 kali):** ....
-- **Prediksi vs kenyataan:** tepat, meleset, atau sebagian? Bila meleset, apa yang salah dari model mental Anda?
-- **Efek samping yang muncul:** ....
+- **Hash commit perbaikan:** 26 Oktober 2026
+- **Hasil ukur (median 3 kali):** Durasi rekaman: 10,30 detik, 10,12 detik, dan 10,17 detik. 
+INP: 120 ms, dari 192 ms. CLS: 0, tetap 0. Jumlah Long Task: 0 kejadian, dari median 285 kejadian. Long Task terlama: 0 ms, dari median 375 ms. Blocking: 0 ms, dari median 13.562 ms. Frame di atas 50 ms: 1 kejadian pada median tiga pengujian sesudah perbaikan. Frame terburuk: 61 ms pada median tiga pengujian sesudah perbaikan.
+- **Prediksi vs kenyataan:** Target jumlah frame di atas 50 ms tercapai karena median hasil sesudah perbaikan adalah 1 kejadian selama rekaman sekitar 10 detik, di bawah target maksimal 2 kejadian. Jumlah Long Task dan Blocking juga turun mendekati nol. Hasil ini mendukung hipotesis bahwa aktivitas pemrosesan dan rendering yang tidak diperlukan selama halaman idle telah berkurang.
+Namun, baseline belum sepenuhnya sebanding karena durasi rekamannya berbeda-beda. Oleh karena itu, besar peningkatan jumlah frame tidak boleh disimpulkan secara pasti hanya dari perbandingan median mentah baseline dan hasil sesudah perbaikan.
+- **Efek samping yang muncul:** Berdasarkan screenshot, masih terdapat satu frame di atas 50 ms pada dua dari tiga pengujian sesudah perbaikan, dengan frame terburuk 73 ms dan 61 ms. Hasil ini masih memenuhi target jumlah frame, tetapi menunjukkan bahwa aktivitas rendering sesekali tetap terjadi.
+Efek samping visual atau fungsional, seperti perubahan kelancaran hitung mundur atau ticker, belum dapat dipastikan dari metrik performa saja dan perlu diperiksa melalui pengujian tampilan serta fungsi aplikasi.
