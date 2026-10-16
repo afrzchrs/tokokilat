@@ -21,17 +21,17 @@ Apa masalah terbesar, apa yang dilakukan, berapa hasilnya. Tulis untuk manajer p
 
 ## 3. Hasil sebelum dan sesudah
 
-| Skenario | Metrik                                        | Sebelum (median) | Sesudah (median) | Target                         | Tercapai? |
-| -------- | --------------------------------------------- | ---------------- | ---------------- | ------------------------------ | --------- |
-| S0       | CLS                                           |                  |                  | <= 0,1                         |           |
-| S0       | Jumlah permintaan gambar dalam 10 dtk pertama |                  |                  | sebanding dengan yang terlihat |           |
-| S1       | INP                                           |                  |                  | <= 200 ms                      |           |
-| S1       | Long task terlama                             |                  |                  | <= 100 ms                      |           |
-| S2       | INP                                           | 520 ms           |                  | <= 200 ms                      |           |
-| S3       | Jumlah pesanan dari 3 klik                    | 3 pesanan        |                  | 1                              |           |
-| S4       | INP / progres tergambar bertahap?             |                  |                  |                                |           |
-| S5       | Frame > 50 ms per 10 dtk                      |                  |                  | <= 2                           |           |
-| S6       | Frame > 50 ms per 10 dtk                      |                  |                  | <= 2                           |           |
+| Skenario | Metrik                                        | Sebelum (median) | Sesudah (median) | Target                         | Tercapai?    |
+| -------- | --------------------------------------------- | ---------------- | ---------------- | ------------------------------ | ------------ |
+| S0       | CLS                                           |                  |                  | <= 0,1                         |              |
+| S0       | Jumlah permintaan gambar dalam 10 dtk pertama |                  |                  | sebanding dengan yang terlihat |              |
+| S1       | INP                                           |                  |                  | <= 200 ms                      |              |
+| S1       | Long task terlama                             |                  |                  | <= 100 ms                      |              |
+| S2       | INP                                           | 520 ms           | 81 ms           | <= 200 ms                      | ya, tercapai |
+| S3       | Jumlah pesanan dari 3 klik                    | 3 pesanan        | 1 pesanan        | 1                              | ya, tercapai |
+| S4       | INP / progres tergambar bertahap?             |                  |                  |                                |              |
+| S5       | Frame > 50 ms per 10 dtk                      |                  |                  | <= 2                           |              |
+| S6       | Frame > 50 ms per 10 dtk                      |                  |                  | <= 2                           |              |
 
 ## 4. Temuan
 
