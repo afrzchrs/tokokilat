@@ -9,14 +9,13 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
 ## P-01: Tombol "+ Keranjang" memberikan kesan nge-freeze dan membuat UI macet (TK-1044)
 
 **Tiket terkait:** TK-1044 (Skenario S2)
-**Tanggal dan hash commit entri ini:**
+**Tanggal dan hash commit entri ini:** 10 oktober 2026
 
 ### Sebelum perbaikan
 
 - **Yang teramati di trace (baseline):** Pas tombol "+ Keranjang" ditekan, browser langsung freeze sekitar setengah detik. Di track Interactions, balok interaksi berwarna merah dengan durasi INP sekitar 500-an ms. Di track Main, muncul Long Task berdurasi 300–400 ms. Dari tab Bottom-Up, penggunaan CPU habis didominasi oleh fungsi k dan loop f milik lacak.min.js, disusul proses JSON.parse dan JSON.stringify.
-- **Dugaan mekanisme:** Dugaan kami dari sisi event loop dan rendering pipeline: saat tombol diklik, browser memasukkan handler klik sebagai sebuah task di main thread. Masalahnya, di dalam task ini JavaScript menjalankan proses yang sangat berat, yaitu membaca riwayat via JSON.parse sebesar 1 MB dan menghitung hash SDK vendor dengan perulangan 2 juta kali secara sinkron. Karena tahap JS ini memakan waktu ratusan milidetik, task tersebut berubah jadi long task yang memblokir antrean event loop. Akibatnya, browser tidak bisa masuk ke fase rendering opportunity, sehingga tahap pipeline berikutnya seperti Style, Layout, dan Paint untuk memunculkan notifikasi toast dan memperbarui badge keranjang jadi tertahan sampai task selesai. Pengguna melihat layar membeku dan mengira tombolnya macet, lalu menekannya berulang kali.
-- **Rencana perubahan:**
-  1. Simpan data riwayat di memori (variabel modul) supaya cuma dibaca sekali dari localStorage saat awal.
+- **Dugaan mekanisme:** Dugaan kami dari sisi event loop dan rendering pipeline: saat tombol diklik, browser memasukkan handler klik sebagai sebuah task di main thread. Masalahnya, di dalam task ini JavaScript menjalankan proses yang sangat berat, yaitu membaca riwayat via JSON.parse sebesar 1 MB dan menghitung hash SDK vendor dengan perulangan 2 juta kali secara sinkron. Karena tahap JS ini memakan waktu ratusan milidetik, task tersebut berubah jadi long task yang memblokir antrean event loop. Akibatnya, browser tidak bisa masuk ke fase rendering opportunity, sehingga tahap pipeline berikutnya seperti Style, Layout, dan Paint untuk memunculkan notifikasi toast dan memperbarui badge keranjang jadi tertahan sampai task selesai. Pengguna melihat layar membeku dan mengira tombolnya macet, lalu menekannya berulang kali.10**Rencana perubahan:**
+- 1. Simpan data riwayat di memori (variabel modul) supaya cuma dibaca sekali dari localStorage saat awal.
   2. Tunda proses simpan riwayat ke localStorage pakai debounce 400 ms agar penulisan data besar keluar dari alur klik.
   3. Pangkas data analitik yang dikirim: hanya kirim info penting produk, tidak perlu membawa seluruh data riwayat.
   4. Pindahkan eksekusi SDK vendor ke Web Worker (lewat Blob di util.js) dan panggil lewat setTimeout(..., 0) (kirimTertunda) agar proses hashing keluar dari antrean task klik di main thread.
@@ -27,17 +26,18 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
 
 ### Sesudah perbaikan
 
-- **Hash commit perbaikan:** ....
-- **Hasil ukur (median 3 kali):** ....
-- **Prediksi vs kenyataan:** tepat, meleset, atau sebagian? Bila meleset, apa yang salah dari model mental Anda?
-- **Efek samping yang muncul:** ....
+- **Hash commit perbaikan:** 
+- **Hasil ukur (median 3 kali):** INP berhasil turun drastis sampai masuk zona hijau (jauh di bawah batas 200 ms, mencapai puluhan milidetik saja). Long task di main thread selama klik tombol hilang.
+- **Prediksi vs kenyataan:** Tepat seperti dugaan awal. Penyebab utama freeze memang bukan DOM-nya, melainkan proses hashing SDK vendor yang memakan waktu di main thread. Begitu dipindah ke Web Worker, tombol langsung terasa enteng dan responsif.
+- **Efek samping yang muncul:**
+  Tidak ada masalah, penambahan item ke keranjang belanja tetap berjalan normal.
 
 ---
 
 ## P-02: Klik beruntun pada "Beli sekarang" membuat pesanan ganda (TK-1052)
 
 **Tiket terkait:** TK-1052 (Skenario S3)
-**Tanggal dan hash commit entri ini:** 2 Oktober 2026, commit `6220148`
+**Tanggal dan hash commit entri ini:** 10 Oktober 2026 
 
 ### Sebelum perbaikan
 
@@ -54,7 +54,8 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
 
 ### Sesudah perbaikan
 
-- **Hash commit perbaikan:** ....
-- **Hasil ukur (median 3 kali):** ....
-- **Prediksi vs kenyataan:** tepat, meleset, atau sebagian? Bila meleset, apa yang salah dari model mental Anda?
-- **Efek samping yang muncul:** ....
+- **Hash commit perbaikan:**
+- **Hasil ukur (median 3 kali):** Saat dicoba klik cepat 3 kali, pesanan yang masuk ke server berhasil ditekan menjadi tepat 1 pesanan saja.
+- **Prediksi vs kenyataan:** Dugaan kami terbukti tepat. Masalah pesanan ganda ini kuncinya ada di status tombol dan pencegahan request balapan (race condition). Begitu ada guard dan tombol langsung disabled, klik berikutnya tidak akan diproses server.
+- **Efek samping yang muncul:**
+  Tidak ada kendala, alur pemesanan berjalan lancar dan tombol kembali normal setelah transaksi selesai.
