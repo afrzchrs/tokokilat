@@ -1,0 +1,14 @@
+Tugas pertemuan 3 
+
+Kelas : D4-3A
+
+Anggota Kelompok:
+- Afriza Choirie Saputra (mengerjakan s0)
+- Devi Maulani (mengerjakan s2 & s3)
+- Mario Julius Christianto (mengerjakan s1)
+- Muhamad Dino Dermawan (mengerjakan s4 & s6)
+- Roufiel Hadi (mengerjakan s5)
+
+Untuk pengerjaan masing-masing skenario kami bagi ke branch masing masing sehingga hash commit yang dicantumkan di laporan berada di masing-masing branch yang berbeda.
+
+Link GitHub : https://github.com/afrzchrs/tokokilat.git

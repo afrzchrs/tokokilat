@@ -78,8 +78,12 @@ function buatKartu(produk) {
   return kartu;
 }
 
-// Judul produk dibatasi 2 baris via CSS (.kartu-judul) sehingga samakanTinggiJudul
-// yang memicu layout thrashing tidak diperlukan lagi.
+// Judul produk panjangnya beda-beda (1-3 baris). Supaya harga & tombol dalam
+// satu deret sejajar rapi, tinggi judul disamakan. Cara lama mengukur tinggi
+// judul lalu menulisnya ke setiap elemen (baca offsetHeight + tulis style) yang
+// memaksa reflow dan memakan ~83 ms pada CPU 4x. Diganti dengan pembatasan 2
+// baris lewat CSS (.kartu-judul): tinggi tetap seragam tanpa pengukuran sama
+// sekali, sehingga tak ada reflow dan tak ada long task saat menggambar kartu.
 function pastikanSentinel(kisi) {
   if (!sentinel) {
     sentinel = el('div', 'sentinel');
@@ -131,7 +135,9 @@ export function renderProduk(daftar) {
 }
 
 // Isi sampai layar terisi. Pemeriksaan posisi sentinel dilakukan di frame
-// berikutnya (requestAnimationFrame), BUKAN di dalam task render.
+// berikutnya (requestAnimationFrame), BUKAN di dalam task render. Membaca
+// getBoundingClientRect tepat setelah menambah puluhan kartu memaksa layout
+// sinkron (~89 ms pada CPU 4x) dan menjadikan task render sebuah long task.
 function isiSampaiLayarPenuh() {
   if (posisiChunk >= daftarAktif.length) return;
   requestAnimationFrame(() => {
@@ -144,7 +150,7 @@ function isiSampaiLayarPenuh() {
 }
 
 // Perbarui harga voucher hanya pada kartu yang benar-benar ada di DOM,
-// tanpa menggambar ulang seluruh kisi.
+// tanpa menggambar ulang seluruh kisi (yang akan membuang posisi gulir).
 export function perbaruiHargaVoucherDiKartu() {
   document.querySelectorAll('.kartu').forEach((kartu) => {
     const harga = keadaan.hargaVoucher.get(Number(kartu.dataset.id));

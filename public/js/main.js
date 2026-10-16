@@ -1,12 +1,14 @@
 import { muatProduk, renderProduk } from './katalog.js';
-import { pasangPencarian } from './pencarian.js';
+import { pasangPencarian, siapkanIndeks } from './pencarian.js';
 import { pasangKeranjang, siapkanRiwayatContoh } from './keranjang.js';
 import { pasangVoucher } from './harga-promo.js';
 import { pasangPromo } from './promo.js';
 import { pasangGulir } from './gulir.js';
 import { pasangKaki } from './kategori.js';
+import { kirimTertunda, mulaiTelemetri } from './util.js';
 
 async function mulai() {
+  mulaiTelemetri();
   pasangPromo();
   pasangGulir();
 
@@ -18,8 +20,9 @@ async function mulai() {
   pasangVoucher();
   pasangKaki(produk);
   renderProduk(produk);
+  siapkanIndeks(produk);
 
-  if (window.Lacak) window.Lacak.kirim('page_view', { halaman: 'flashsale-1212', jumlahProduk: produk.length });
+  if (window.Lacak) kirimTertunda('page_view', { halaman: 'flashsale-1212', jumlahProduk: produk.length });
 }
 
 mulai();
