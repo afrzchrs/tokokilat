@@ -25,23 +25,23 @@ Alat AI yang dipakai: Google Antigravity Model 3.6 Flash Medium | Branch atau co
   ....
   ```
 - **Jenis masalah pada usulan:** pilih satu atau lebih
-  - [X] Salah diagnosis (memperbaiki hal yang bukan penyebab)
+  - [x] Salah diagnosis (memperbaiki hal yang bukan penyebab)
   - [ ] Tidak lengkap (gejala berkurang tetapi akar masalah masih ada)
-  - [X] Menimbulkan regresi (metrik lain, fitur, aksesibilitas, atau memori memburuk)
+  - [x] Menimbulkan regresi (metrik lain, fitur, aksesibilitas, atau memori memburuk)
   - [ ] Melanggar aturan main (menghapus fitur, mengubah berkas terlarang, dan sebagainya)
-  - [X] Memperbaiki sesuatu yang tidak berpengaruh terukur
+  - [x] Memperbaiki sesuatu yang tidak berpengaruh terukur
 - **Bukti:**
 
-![1790864475021](image/AUDIT-AI/1790864475021.png)
+**bukti berkas :** image/AUDIT-AI/1790864475021.png
 
 Pada rekaman flame chart panel Performance, `samakanTinggiJudul()` hanya dieksekusi di awal (~20 ms) dan tidak menyumbang skor CLS. Pergeseran tata letak sebesar **0,475** terjadi tepat pada detik 1,8 ketika respons asinkron `/api/promo` tiba dan disisipkan dengan `$('#utama').prepend(banner)`. Jika usulan `position: fixed` diterapkan, banner promo melayang menutupi tombol filter kategori, kolom input voucher, serta produk katalog di layar mobile (412 × 915 piksel), merusak aksesibilitas dan interaksi visual pengguna secara parah.
 
-![1790890875739](image/AUDIT-AI/1790890875739.png)
+**bukti berkas :** image/AUDIT-AI/1790890875739.png
 
-- **Mengapa AI bisa keliru di sini:** AI hanya menganalisis sintaks kode JavaScript secara statis. AI melihat adanya fungsi manipulasi layout DOM (`samakanTinggiJudul()`) dan mengira itu biang kerok CLS. AI tidak membaca rekaman flame chart Chrome DevTools, sehingga tidak mengetahui bahwa event LayoutShift sesungguhnya dipicu oleh penyisipan elemen asinkron di bagian paling atas dokumen tanpa pencadangan ruang (*unreserved space*). Fungsi `samakanTinggiJudul()` memang memicu *layout thrashing* pada rendering kartu, tetapi bukan pemicu pergeseran tata letak banner.
-- **Perbaikan yang benar menurut tim:** 
+- **Mengapa AI bisa keliru di sini:** AI hanya menganalisis sintaks kode JavaScript secara statis. AI melihat adanya fungsi manipulasi layout DOM (`samakanTinggiJudul()`) dan mengira itu biang kerok CLS. AI tidak membaca rekaman flame chart Chrome DevTools, sehingga tidak mengetahui bahwa event LayoutShift sesungguhnya dipicu oleh penyisipan elemen asinkron di bagian paling atas dokumen tanpa pencadangan ruang (_unreserved space_). Fungsi `samakanTinggiJudul()` memang memicu _layout thrashing_ pada rendering kartu, tetapi bukan pemicu pergeseran tata letak banner.
+- **Perbaikan yang benar menurut tim:**
   1. Menyisipkan kerangka elemen `<section class="promo-banner">` secara sinkron di JavaScript sebelum `fetch('/api/promo')` dikirimkan dengan teks placeholder informatif, sehingga ruang banner sudah terbentuk sejak frame rendering pertama.
-  2. Menetapkan `min-height: 132px` di CSS untuk desktop dan `@media (max-width: 640px) { .promo-banner { min-height: 220px; } }` untuk layar mobile agar sesuai dengan pembungkusan teks multi-baris promo. Begitu data `/api/promo` tiba, teks langsung diperbarui di tempat (*in-place*) tanpa mengubah dimensi elemen. Skor CLS turun drastis dari 0,475 menjadi **0,002** tanpa mengganggu antarmuka pengguna.
+  2. Menetapkan `min-height: 132px` di CSS untuk desktop dan `@media (max-width: 640px) { .promo-banner { min-height: 220px; } }` untuk layar mobile agar sesuai dengan pembungkusan teks multi-baris promo. Begitu data `/api/promo` tiba, teks langsung diperbarui di tempat (_in-place_) tanpa mengubah dimensi elemen. Skor CLS turun drastis dari 0,475 menjadi **0,002** tanpa mengganggu antarmuka pengguna.
   3. Mengganti fungsi `samakanTinggiJudul()` dengan pembatasan 2 baris murni CSS (`-webkit-line-clamp: 2; height: calc(2 * 1.35em)`), bukan untuk memperbaiki CLS, melainkan untuk mengeliminasi reflow sinkron pada kartu katalog.
 
 ## A-02: Melakukan Paginasi Server di server.js atau Memasang Library Virtual List Eksternal
@@ -60,19 +60,17 @@ app.get("/api/produk", (req, res) => {
 - **Jenis masalah pada usulan:** pilih satu atau lebih
   - [ ] Salah diagnosis (memperbaiki hal yang bukan penyebab)
   - [ ] Tidak lengkap (gejala berkurang tetapi akar masalah masih ada)
-  - [X] Menimbulkan regresi (metrik lain, fitur, aksesibilitas, atau memori memburuk)
-  - [X] Melanggar aturan main (menghapus fitur, mengubah berkas terlarang, dan sebagainya)
+  - [x] Menimbulkan regresi (metrik lain, fitur, aksesibilitas, atau memori memburuk)
+  - [x] Melanggar aturan main (menghapus fitur, mengubah berkas terlarang, dan sebagainya)
   - [ ] Memperbaiki sesuatu yang tidak berpengaruh terukur
-- **Bukti:**
-
-![1790891060961](image/AUDIT-AI/1790891060961.png)
+- **Bukti:** image/AUDIT-AI/1790891060961.png
 
 Di panel Network, waktu respons `/api/produk` sebenarnya sangat cepat (~180 ms), sehingga backend tidak bermasalah. Mengubah `server.js` melanggar aturan integritas berkas tugas (bagian 5: berkas terlarang). Selain itu, memotong katalog menjadi 20 produk merusak fitur filter pencarian instan di `katalog.js`, karena pengguna tidak bisa lagi mencari sisa 1.480 produk lainnya di sisi klien.
 
-![1790891206943](image/AUDIT-AI/1790891206943.png)
+**Bukti Berkas:** image/AUDIT-AI/1790891206943.png
 
 - **Mengapa AI bisa keliru di sini:** AI terbiasa dengan arsitektur web umum (di mana katalog ribuan produk biasanya di-paginate di server) dan tidak membaca berkas aturan `TUGAS.md` yang secara eksplisit melarang memodifikasi `server.js`, melarang pustaka eksternal, dan mewajibkan seluruh 1.500 produk tetap ada di sisi klien. AI tidak sadar bahwa peramban modern sudah memiliki fitur platform native standar (`loading="lazy"` dan `decoding="async"`) serta Web API standar (`IntersectionObserver`) yang dapat menyelesaikan masalah antrean HTTP/1.1 secara murni di sisi klien.
-- **Perbaikan yang benar menurut tim:** Menerapkan atribut native HTML `gambar.loading = 'lazy'` dan `gambar.decoding = 'async'` di `katalog.js`, dimensi eksplisit `width="480"` `height="480"`, serta memberikan `aspect-ratio: 1 / 1` di CSS. Selain itu, diterapkan teknik *windowing/chunked rendering* bertahap (`UKURAN_CHUNK = 24`) menggunakan `IntersectionObserver` sentinel tanpa pustaka pihak ketiga. Seluruh 1.500 produk tetap ada di memori klien untuk keperluan filter dan pencarian instan, tetapi permintaan jaringan awal berkurang drastis dari 1.500 menjadi **10 gambar** (selesai dalam waktu ~1,97 detik).
+- **Perbaikan yang benar menurut tim:** Menerapkan atribut native HTML `gambar.loading = 'lazy'` dan `gambar.decoding = 'async'` di `katalog.js`, dimensi eksplisit `width="480"` `height="480"`, serta memberikan `aspect-ratio: 1 / 1` di CSS. Selain itu, diterapkan teknik _windowing/chunked rendering_ bertahap (`UKURAN_CHUNK = 24`) menggunakan `IntersectionObserver` sentinel tanpa pustaka pihak ketiga. Seluruh 1.500 produk tetap ada di memori klien untuk keperluan filter dan pencarian instan, tetapi permintaan jaringan awal berkurang drastis dari 1.500 menjadi **10 gambar** (selesai dalam waktu ~1,97 detik).
 
 ---
 

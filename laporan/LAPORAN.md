@@ -49,7 +49,9 @@ Ulangi blok berikut untuk tiap temuan. Urutkan berdasarkan dampak, bukan urutan 
   Pak Hendra (TK-1081, S0) melaporkan bahwa gambar produk lama sekali muncul dan hanya menampilkan kotak abu-abu dalam waktu lama, terutama saat menggulir cepat ke bawah. Selain itu, penggunaan kuota internet terasa sangat boros dan pengguna mengira server backend mengalami kelambatan.
 - **Bukti:**
   Pada baseline trace S0, tercatat 1.500 event `ResourceSendRequest` dengan `resourceType: "Image"`, dari `/img/p/1.svg` sampai `/img/p/1500.svg` yang diminta sekaligus sejak awal halaman dimuat. Waktu tunggu `Queuing and connecting` gambar mencapai puluhan detik hingga lebih dari 1 menit karena antrean koneksi jaringan jenuh.
-  ![1790854407049](image/LAPORAN/1790854407049.png)
+  **bukti berkas:** image/LAPORAN/1790854407049.png
+
+
 - **Akar masalah dan mekanismenya:**
   Pada `public/js/katalog.js`, seluruh 1.500 elemen `<img>` langsung diberi atribut `src` saat kartu dibuat oleh `renderProduk()` tanpa atribut `loading="lazy"`. Browser langsung menembakkan 1.500 permintaan HTTP serentak, melampaui batas koneksi paralel per host (maksimal 6 koneksi pada HTTP/1.1). Akibatnya, terjadi antrean jaringan masif (_head-of-line blocking_), di mana gambar yang sedang dilihat pengguna di viewport harus mengantre di belakang ribuan gambar off-screen.
 - **Kualitas yang terdampak (ISO/IEC 25010):**
@@ -65,7 +67,7 @@ Ulangi blok berikut untuk tiap temuan. Urutkan berdasarkan dampak, bukan urutan 
 - **Hasil:**
   Jumlah permintaan gambar dalam 10 detik pertama (S0) turun drastis dari **1.500 request menjadi hanya 10 request gambar aktif** (dari total 26 request halaman, sebanding dengan kartu yang terlihat di viewport mobile 412 × 915). Antrean koneksi jaringan tidak lagi tersumbat dan waktu unduh gambar awal selesai seketika (~1,95 s.d. 2,00 detik). Target S0 tercapai secara tuntas.
 
-  ![1792096628306](image/LAPORAN/1792096628306.png)
+  **bukti berkas:** image/LAPORAN/1792096628306.png
 
 ### T-07: Halaman meloncat saat pemuatan awal (Layout Shift)
 
@@ -75,7 +77,8 @@ Ulangi blok berikut untuk tiap temuan. Urutkan berdasarkan dampak, bukan urutan 
 - **Bukti:**
   Pada trace baseline S0 terdapat event `LayoutShift` dengan cumulative score sekitar 0,475. Layout shift tersebut menggeser elemen:
   `DIV class='alat-kanan'`, `P id='ringkasan' class='ringkasan'`, kartu produk teratas, dan `FOOTER class='kaki'`.
-  ![1790854396366](image/LAPORAN/1790854396366.png)
+  **bukti berkas :** image/LAPORAN/1790854396366.png
+
 - **Akar masalah dan mekanismenya:**
   Keping kategori dan banner promo dimuat secara asinkron. Khususnya pada `public/js/promo.js`, fungsi `pasangBannerPromo()` memanggil endpoint `/api/promo` yang memiliki latensi server ~1.800 ms.
   Setelah data promo diterima, banner baru dibuat dan disisipkan ke bagian paling atas kontainer menggunakan `$('#utama').prepend(banner);`.
@@ -95,7 +98,7 @@ Ulangi blok berikut untuk tiap temuan. Urutkan berdasarkan dampak, bukan urutan 
 - **Hasil:**
   Skor CLS pada skenario S0 turun drastis dari **0,475 menjadi 0,002** (konsisten di seluruh pengujian, jauh di bawah batas target $\le 0{,}1$). Halaman tidak lagi meloncat ke bawah saat dimuat dan masalah salah klik pada target pengguna berhasil dihilangkan sepenuhnya. Target S0 tercapai secara tuntas.
 
-  ![1792096733905](image/LAPORAN/1792096733905.png)
+  **bukti berkas :** image/LAPORAN/1792096733905.png
 
 ## 5. Dugaan yang ternyata keliru
 
