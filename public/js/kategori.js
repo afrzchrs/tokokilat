@@ -12,18 +12,22 @@ export function pasangKaki(semuaProduk) {
   for (const m of teratas) daftarMerek.append(el('li', '', m.nama + ' (' + m.terjual.toLocaleString('id-ID') + ' terjual)'));
 
   // --- kategori terkait ---
-  // TODO(rudi): ini O(n^2) dan ada querySelectorAll di dalam loop. HARUS dioptimasi sebelum 12.12!!!
+  // Nilai "sudahAda" pada kode lama adalah jumlah <li> yang sudah ditambahkan,
+  // yang pada iterasi ke-i selalu sama dengan i. Jadi pembacaan DOM
+  // (querySelectorAll di dalam loop) tidak diperlukan dan diganti dengan i,
+  // sehingga hasilnya identik tanpa memaksa reflow tiap iterasi.
   const kategori = [...new Set(semuaProduk.map((p) => p.kategori))];
   const daftarTerkait = $('#kategori-terkait');
+  const frag = document.createDocumentFragment();
   for (let i = 0; i < kategori.length; i++) {
     let pasangan = null;
     let skorTertinggi = -1;
     for (let j = 0; j < kategori.length; j++) {
       if (i === j) continue;
-      const sudahAda = document.querySelectorAll('#kategori-terkait li').length;
-      const skor = ((kategori[i].length * 31 + kategori[j].length * 17 + sudahAda) % 97);
+      const skor = ((kategori[i].length * 31 + kategori[j].length * 17 + i) % 97);
       if (skor > skorTertinggi) { skorTertinggi = skor; pasangan = kategori[j]; }
     }
-    daftarTerkait.append(el('li', '', kategori[i] + ' + ' + pasangan));
+    frag.append(el('li', '', kategori[i] + ' + ' + pasangan));
   }
+  daftarTerkait.append(frag);
 }
