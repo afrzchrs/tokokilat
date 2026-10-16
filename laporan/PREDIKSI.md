@@ -9,7 +9,7 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
 ## P-05: Pemuatan gambar produk kartu katalog (TK-1081)
 
 **Tiket terkait:** TK-1081 (Skenario S0).
-**Tanggal dan hash commit entri ini:** 4f47e84
+**Tanggal dan hash commit entri ini:** 1a5490b
 
 ### Sebelum perbaikan
 
@@ -44,7 +44,7 @@ bagian "sebelum" setelah hasilnya diketahui; bila prediksi meleset, jelaskan di 
 ## P-07: Pencegahan layout shift pada pemuatan awal
 
 **Tiket terkait:** TK-1078 (Skenario S0)
-**Tanggal dan hash commit entri ini:** 4f47e84
+**Tanggal dan hash commit entri ini:** 1a5490b
 
 ### Sebelum perbaikan
 
